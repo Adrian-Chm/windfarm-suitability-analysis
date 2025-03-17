@@ -1,0 +1,283 @@
+# File: analysis/templates/analysis/results.html
+{% extends 'analysis/base.html' %}
+
+{% block title %}Analysis Results{% endblock %}
+
+{% block extra_head %}
+    <style>
+        .nav-tabs .nav-link {
+            color: #495057;
+        }
+        
+        .nav-tabs .nav-link.active {
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        
+        .tab-content {
+            padding: 20px;
+            border: 1px solid #dee2e6;
+            border-top: none;
+            border-radius: 0 0 5px 5px;
+        }
+        
+        .stats-card {
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .map-info {
+            padding: 15px;
+            background-color: #f0f8ff;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h1>Wind Farm Suitability Analysis Results</h1>
+            <p class="text-muted">
+                Analysis ID: {{ params.id }}<br>
+                Created: {{ params.created_at|date:"F j, Y, g:i a" }}
+            </p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'analysis:index' %}" class="btn btn-outline-primary me-2">New Analysis</a>
+            <a href="{% url 'analysis:export' params.id %}" class="btn btn-outline-secondary">Export Results</a>
+        </div>
+    </div>
+    
+    <!-- Analysis Parameters Summary -->
+    <div class="card mb-4">
+        <div class="card-header bg-primary">
+            <h3 class="card-title mb-0">Analysis Parameters</h3>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5>Region</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Latitude:</strong> {{ params.latitude }}</li>
+                        <li><strong>Longitude:</strong> {{ params.longitude }}</li>
+                        <li><strong>Buffer Radius:</strong> {{ params.buffer_radius }} km</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Factor Weights</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Slope:</strong> {{ params.weight_slope }}</li>
+                        <li><strong>Elevation:</strong> {{ params.weight_elevation }}</li>
+                        <li><strong>Wind Speed:</strong> {{ params.weight_wind }}</li>
+                        <li><strong>Roads Distance:</strong> {{ params.weight_roads }}</li>
+                        <li><strong>Land Cover:</strong> {{ params.weight_landcover }}</li>
+                        <li><strong>Natura 2000 Distance:</strong> {{ params.weight_natura }}</li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Thresholds</h5>
+                    <ul class="list-unstyled">
+                        <li><strong>Max Slope:</strong> {{ params.threshold_slope }} degrees</li>
+                        <li><strong>Max Elevation:</strong> {{ params.threshold_elevation }} m</li>
+                        <li><strong>Min Wind Speed:</strong> {{ params.threshold_wind }} m/s</li>
+                        <li><strong>Min Road Distance:</strong> {{ params.threshold_roads }} m</li>
+                        <li><strong>Min Natura 2000 Distance:</strong> {{ params.threshold_natura }} m</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Suitability Statistics -->
+    <div class="analysis-section">
+        <h3>Suitability Statistics</h3>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="card metric-card">
+                    <h5 class="metric-label">Mean Suitability</h5>
+                    <div class="metric-value">{{ stats.mean_suitability }}%</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card metric-card">
+                    <h5 class="metric-label">Minimum Suitability</h5>
+                    <div class="metric-value">{{ stats.min_suitability }}%</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card metric-card">
+                    <h5 class="metric-label">Maximum Suitability</h5>
+                    <div class="metric-value">{{ stats.max_suitability }}%</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Maps Tabs -->
+    <div class="analysis-section">
+        <h3>Suitability Maps</h3>
+        
+        <ul class="nav nav-tabs" id="mapTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="suitability-tab" data-bs-toggle="tab" data-bs-target="#suitability" type="button" role="tab">
+                    Suitability
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="slope-tab" data-bs-toggle="tab" data-bs-target="#slope" type="button" role="tab">
+                    Slope
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="elevation-tab" data-bs-toggle="tab" data-bs-target="#elevation" type="button" role="tab">
+                    Elevation
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="wind-tab" data-bs-toggle="tab" data-bs-target="#wind" type="button" role="tab">
+                    Wind Speed
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="roads-tab" data-bs-toggle="tab" data-bs-target="#roads" type="button" role="tab">
+                    Roads
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="landcover-tab" data-bs-toggle="tab" data-bs-target="#landcover" type="button" role="tab">
+                    Land Cover
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="natura-tab" data-bs-toggle="tab" data-bs-target="#natura" type="button" role="tab">
+                    Natura 2000
+                </button>
+            </li>
+        </ul>
+        
+        <div class="tab-content" id="mapTabsContent">
+            <!-- Suitability Map Tab -->
+            <div class="tab-pane fade show active" id="suitability" role="tabpanel">
+                <div class="map-info">
+                    <h4>Wind Farm Suitability Map</h4>
+                    <p>
+                        This map shows the overall suitability for wind farm development based on all factors.
+                        Higher values (green) indicate more suitable areas, while lower values (red) indicate less suitable areas.
+                    </p>
+                    <p>
+                        The suitability score is calculated by combining all the weighted factors and normalizing to a 0-100% scale.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.suitability }}"></iframe>
+                </div>
+            </div>
+            
+            <!-- Slope Map Tab -->
+            <div class="tab-pane fade" id="slope" role="tabpanel">
+                <div class="map-info">
+                    <h4>Slope Map</h4>
+                    <p>
+                        Areas with slope ≤ {{ params.threshold_slope }} degrees are considered suitable.
+                        Weight in suitability calculation: {{ params.weight_slope }}
+                    </p>
+                    <p>
+                        Flatter areas (green) are better suited for wind farm construction and maintenance.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.slope }}"></iframe>
+                </div>
+            </div>
+            
+            <!-- Elevation Map Tab -->
+            <div class="tab-pane fade" id="elevation" role="tabpanel">
+                <div class="map-info">
+                    <h4>Elevation Map</h4>
+                    <p>
+                        Areas with elevation ≤ {{ params.threshold_elevation }} m are considered suitable.
+                        Weight in suitability calculation: {{ params.weight_elevation }}
+                    </p>
+                    <p>
+                        Lower elevations (green) are generally more accessible and less prone to extreme weather.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.elevation }}"></iframe>
+                </div>
+            </div>
+            
+            <!-- Wind Speed Map Tab -->
+            <div class="tab-pane fade" id="wind" role="tabpanel">
+                <div class="map-info">
+                    <h4>Wind Speed Map</h4>
+                    <p>
+                        Areas with wind speed ≥ {{ params.threshold_wind }} m/s are considered suitable.
+                        Weight in suitability calculation: {{ params.weight_wind }}
+                    </p>
+                    <p>
+                        Higher wind speeds (red-yellow) yield better energy production potential.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.wind_speed }}"></iframe>
+                </div>
+            </div>
+            
+            <!-- Roads Map Tab -->
+            <div class="tab-pane fade" id="roads" role="tabpanel">
+                <div class="map-info">
+                    <h4>Distance to Roads Map</h4>
+                    <p>
+                        Areas with distance to roads ≥ {{ params.threshold_roads }} m are considered suitable.
+                        Weight in suitability calculation: {{ params.weight_roads }}
+                    </p>
+                    <p>
+                        This factor balances accessibility with safety buffer requirements.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.roads }}"></iframe>
+                </div>
+            </div>
+            
+            <!-- Land Cover Map Tab -->
+            <div class="tab-pane fade" id="landcover" role="tabpanel">
+                <div class="map-info">
+                    <h4>Land Cover Map</h4>
+                    <p>
+                        Agricultural and herbaceous vegetation areas (categories 30 and 40) are considered suitable.
+                        Weight in suitability calculation: {{ params.weight_landcover }}
+                    </p>
+                    <p>
+                        Different colors represent different land use types as shown in the legend.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.landcover }}"></iframe>
+                </div>
+            </div>
+            
+            <!-- Natura 2000 Map Tab -->
+            <div class="tab-pane fade" id="natura" role="tabpanel">
+                <div class="map-info">
+                    <h4>Distance from Natura 2000 Sites Map</h4>
+                    <p>
+                        Areas with distance from Natura 2000 sites ≥ {{ params.threshold_natura }} m are considered suitable.
+                        Weight in suitability calculation: {{ params.weight_natura }}
+                    </p>
+                    <p>
+                        This helps maintain an appropriate buffer from protected ecological areas.
+                    </p>
+                </div>
+                <div class="map-container">
+                    <iframe src="{{ maps.natura_2000 }}"></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

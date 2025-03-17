@@ -1,0 +1,70 @@
+
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Analysis Region Preview</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+                <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+                <style>
+                    body { margin: 0; padding: 0; }
+                    html, body, #map { height: 100%; width: 100%; }
+                    .info-box {
+                        background: white;
+                        padding: 8px;
+                        border-radius: 4px;
+                        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                        position: absolute;
+                        bottom: 10px;
+                        left: 10px;
+                        z-index: 1000;
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="map"></div>
+                <div class="info-box">
+                    <strong>Analysis Region</strong><br>
+                    Center: 50.5, 2.0<br>
+                    Radius: 25 km
+                </div>
+                <script>
+                    // Create the map centered at the specified coordinates
+                    var map = L.map('map').setView([50.5, 2.0], 9);
+                    
+                    // Add satellite imagery layer
+                    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Imagery &copy; Esri'
+                    }).addTo(map);
+                    
+                    // Add a terrain/topo layer
+                    var topoLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Imagery &copy; Esri'
+                    });
+                    
+                    // Add layer control
+                    var baseLayers = {
+                        "Satellite": map.getPane('tilePane').lastChild,
+                        "Topographic": topoLayer
+                    };
+                    L.control.layers(baseLayers).addTo(map);
+                    
+                    // Create a circle representing the analysis area
+                    var circle = L.circle([50.5, 2.0], {
+                        color: 'red',
+                        fillColor: '#f03',
+                        fillOpacity: 0.2,
+                        radius: 25000  // Convert km to meters
+                    }).addTo(map);
+                    
+                    // Add a marker at the center
+                    L.marker([50.5, 2.0]).addTo(map)
+                        .bindPopup("<strong>Analysis Center</strong><br>Lat: 50.5, Lon: 2.0")
+                        .openPopup();
+                </script>
+            </body>
+            </html>
+            

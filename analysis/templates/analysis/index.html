@@ -1,0 +1,235 @@
+# File: analysis/templates/analysis/index.html
+{% extends 'analysis/base.html' %}
+
+{% load crispy_forms_tags %}
+
+{% block title %}Wind Farm Suitability Analysis{% endblock %}
+
+{% block extra_head %}
+    <style>
+        #map-preview {
+            height: 400px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        
+        .parameter-section {
+            background-color: #f8f9fa;
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .parameter-section h4 {
+            border-bottom: 1px solid #dee2e6;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header bg-primary">
+                    <h2 class="card-title mb-0">Wind Farm Suitability Analysis</h2>
+                </div>
+                <div class="card-body">
+                    <p class="lead">
+                        This tool analyzes multiple geographic and environmental factors to identify suitable locations 
+                        for wind farm development based on your specified parameters.
+                    </p>
+                    
+                    <form method="post" id="analysis-form">
+                        {% csrf_token %}
+                        
+                        <!-- Region Selection Section -->
+                        <div class="parameter-section">
+                            <h4>Region Selection</h4>
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    {{ form.latitude|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.longitude|as_crispy_field }}
+                                </div>
+                                <div class="col-md-4">
+                                    {{ form.buffer_radius|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <button type="button" id="preview-button" class="btn btn-outline-primary">
+                                Preview Analysis Area
+                            </button>
+                            
+                            <div id="map-preview-container" style="display: none;">
+                                <div id="map-preview">
+                                    <iframe id="map-iframe" width="100%" height="100%" frameborder="0" 
+                                            loading="eager" title="Analysis Region Preview"></iframe>
+                                </div>
+                                <p class="text-muted mt-2">
+                                    Preview of the analysis area based on the coordinates and buffer radius.
+                                </p>
+                                <div id="map-direct-link-container"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Suitability Weights Section -->
+                        <div class="parameter-section">
+                            <h4>Factor Weights</h4>
+                            <p class="text-muted mb-3">
+                                Adjust the relative importance of each factor in the suitability calculation.
+                                Higher values give more weight to that factor.
+                            </p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.weight_slope|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.weight_elevation|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.weight_wind|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.weight_roads|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.weight_landcover|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.weight_natura|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Suitability Thresholds Section -->
+                        <div class="parameter-section">
+                            <h4>Suitability Thresholds</h4>
+                            <p class="text-muted mb-3">
+                                Define the cutoff values for suitable conditions.
+                            </p>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.threshold_slope|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.threshold_elevation|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    {{ form.threshold_wind|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.threshold_roads|as_crispy_field }}
+                                </div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-12">
+                                    {{ form.threshold_natura|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            Run Analysis
+                        </button>
+                    </form>
+                </div>
+            </div>
+            
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h4 class="mb-0">How the Analysis Works</h4>
+                </div>
+                <div class="card-body">
+                    <p>
+                        This tool analyzes several geographic and environmental factors to identify suitable locations 
+                        for wind farms:
+                    </p>
+                    
+                    <ul>
+                        <li><strong>Slope:</strong> Flatter areas are preferable for construction and maintenance</li>
+                        <li><strong>Elevation:</strong> Lower elevations are generally more accessible and less prone to extreme weather</li>
+                        <li><strong>Wind Speed:</strong> Higher average wind speeds yield better energy production</li>
+                        <li><strong>Distance from Roads:</strong> Balances accessibility with buffer requirements</li>
+                        <li><strong>Land Cover:</strong> Prioritizes agricultural or herbaceous vegetation land</li>
+                        <li><strong>Distance from Protected Areas:</strong> Maintains buffer from Natura 2000 conservation sites</li>
+                    </ul>
+                    
+                    <p>
+                        Each factor is weighted according to its importance in the suitability calculation. You can adjust 
+                        these weights and thresholds in the form above.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block extra_js %}
+    <script>
+        // Preview button functionality
+        document.getElementById('preview-button').addEventListener('click', function(event) {
+            // Prevent any default actions (important!)
+            event.preventDefault();
+            
+            // Get current values
+            const lat = document.getElementById('id_latitude').value;
+            const lon = document.getElementById('id_longitude').value;
+            const radius = document.getElementById('id_buffer_radius').value;
+            
+            // Make AJAX request for the preview
+            fetch(`/simple-preview/?latitude=${lat}&longitude=${lon}&buffer_radius=${radius}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response:", data);
+                    if (data.success) {
+                        // Create a direct link to test the file
+                        const container = document.getElementById('map-preview-container');
+                        container.style.display = 'block';
+                        container.innerHTML = `
+                            <div class="alert alert-info">
+                                <p>Testing map display:</p>
+                                <a href="${data.url}" target="_blank" class="btn btn-primary">Open map in new window</a>
+                                <button type="button" id="test-iframe-btn" class="btn btn-secondary ms-2">Try in iframe</button>
+                            </div>
+                            <div id="iframe-container" style="display:none; height:400px; margin-top:15px;">
+                                <iframe width="100%" height="100%" frameborder="0"></iframe>
+                            </div>
+                        `;
+                        
+                        // Add event listener for the iframe button with explicit prevention
+                        document.getElementById('test-iframe-btn').addEventListener('click', function(e) {
+                            // Stop event propagation and prevent default action
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const iframeContainer = document.getElementById('iframe-container');
+                            iframeContainer.style.display = 'block';
+                            iframeContainer.querySelector('iframe').src = data.url;
+                        });
+                    } else {
+                        alert(`Error: ${data.error || 'Unknown error'}`);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error:", error);
+                    alert(`Error: ${error}`);
+                });
+        });
+    </script>
+{% endblock %}

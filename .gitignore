@@ -1,0 +1,28 @@
+# Django .gitignore
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+media
+
+# Virtual Environment
+venv/
+env/
+ENV/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Generated static files
+/staticfiles/
+
+# Generated map files (if you want to exclude them)
+/static/maps/*/
+
+# Environment variables
+.env

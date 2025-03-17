@@ -1,0 +1,137 @@
+
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Satellite Preview</title>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+                <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+                <style>
+                    body, html, #map {
+                        height: 100%;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    .info-box {
+                        background: white;
+                        padding: 8px;
+                        border-radius: 4px;
+                        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+                        position: absolute;
+                        bottom: 10px;
+                        right: 10px;
+                        z-index: 1000;
+                        font-family: Arial, sans-serif;
+                        font-size: 12px;
+                        max-width: 180px;
+                        line-height: 1.4;
+                    }
+                    .circle-label {
+                        background: rgba(255,255,255,0.8);
+                        border: none;
+                        border-radius: 50%;
+                        text-align: center;
+                    }
+                </style>
+            </head>
+            <body>
+                <div id="map"></div>
+                <div class="info-box">
+                    <strong>Analysis Region</strong><br>
+                    Center: 48.3000, 2.0000<br>
+                    Radius: 100 km
+                </div>
+                <script>
+                    // Initialize map centered at the specified coordinates
+                    var map = L.map('map').setView([48.3, 2.0], 10);
+                    
+                    // Add Esri satellite imagery layer (no API key required)
+                    var satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Imagery &copy; Esri',
+                        maxZoom: 19
+                    }).addTo(map);
+                    
+                    // Add OpenStreetMap as an alternative layer
+                    var streetsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; OpenStreetMap contributors',
+                        maxZoom: 19
+                    });
+                    
+                    // Add Esri Topographic map as another option
+                    var topoLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', {
+                        attribution: 'Imagery &copy; Esri',
+                        maxZoom: 19
+                    });
+                    
+                    // Create layer control for basemaps
+                    var baseLayers = {
+                        "Satellite": satelliteLayer,
+                        "Streets": streetsLayer,
+                        "Topographic": topoLayer
+                    };
+                    
+                    L.control.layers(baseLayers).addTo(map);
+                    
+                    // Create a circle representing the analysis area
+                    // Using a bright color with border that will be visible on satellite imagery
+                    var circle = L.circle([48.3, 2.0], {
+                        color: 'red',
+                        weight: 3,
+                        fillColor: 'yellow',
+                        fillOpacity: 0.15,
+                        radius: 100000  // Convert km to meters
+                    }).addTo(map);
+                    
+                    // Add a marker at the center
+                    var marker = L.marker([48.3, 2.0]).addTo(map);
+                    marker.bindPopup("<strong>Analysis Center</strong><br>Latitude: 48.3000<br>Longitude: 2.0000");
+                    
+                    // Display radius on the circle (approximate position calculation)
+                    var radiusLabelPos = getPointOnCircle(48.3, 2.0, 100000, 45);
+                    var radiusLabel = L.marker(radiusLabelPos, {
+                        icon: L.divIcon({
+                            className: 'circle-label',
+                            html: '<div style="padding:3px 6px;background:white;border-radius:3px;font-size:11px;font-weight:bold;box-shadow:0 0 3px rgba(0,0,0,0.3);">100 km</div>',
+                            iconSize: [40, 20],
+                            iconAnchor: [20, 10]
+                        })
+                    }).addTo(map);
+                    
+                    // Helper function to calculate a point on the circle edge
+                    function getPointOnCircle(lat, lng, radiusMeters, angleDegrees) {
+                        // Earth radius in meters
+                        var earthRadius = 6378137;
+                        
+                        // Convert angle from degrees to radians
+                        var angleRadians = angleDegrees * Math.PI / 180;
+                        
+                        // Convert latitude and longitude to radians
+                        var latRad = lat * Math.PI / 180;
+                        var lngRad = lng * Math.PI / 180;
+                        
+                        // Calculate distance in radians
+                        var distanceRadians = radiusMeters / earthRadius;
+                        
+                        // Calculate new latitude
+                        var newLatRad = Math.asin(
+                            Math.sin(latRad) * Math.cos(distanceRadians) + 
+                            Math.cos(latRad) * Math.sin(distanceRadians) * Math.cos(angleRadians)
+                        );
+                        
+                        // Calculate new longitude
+                        var newLngRad = lngRad + Math.atan2(
+                            Math.sin(angleRadians) * Math.sin(distanceRadians) * Math.cos(latRad),
+                            Math.cos(distanceRadians) - Math.sin(latRad) * Math.sin(newLatRad)
+                        );
+                        
+                        // Convert back to degrees
+                        var newLat = newLatRad * 180 / Math.PI;
+                        var newLng = newLngRad * 180 / Math.PI;
+                        
+                        return [newLat, newLng];
+                    }
+                </script>
+            </body>
+            </html>
+            
